@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   prompt_env.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ademurge <ademurge@student.s19.be>         +#+  +:+       +#+        */
+/*   By: gponcele <gponcele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/11/15 11:24:11 by gponcele          #+#    #+#             */
-/*   Updated: 2022/12/13 17:59:30 by ademurge         ###   ########.fr       */
+/*   Updated: 2022/12/22 16:20:11 by gponcele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -83,24 +83,12 @@ void	put_shell(void)
 	printf(RESET);
 }
 
-char	*get_prompt(t_mini *mini, char *prompt)
+char	*get_prompt(t_mini *mini, char *prompt, char *str)
 {
-	char	*str;
-
+	(void) str;
 	if (prompt)
 		free (prompt);
-	prompt = ft_strjoin(mini, ft_strdup(mini, BLUE), getenv("USER"));
-	prompt = ft_strjoin(mini, prompt, "@minishell ");
-	str = ft_strnstr2(mini_getenv(mini, "PWD"),
-			mini_getenv(mini, "USER"), INT_MAX);
-	if (str && prompt)
-	{
-		prompt = ft_strjoin(mini, prompt, GREEN);
-		prompt = ft_strjoin(mini, prompt, "~");
-		prompt = ft_strjoin(mini, prompt, str);
-	}
-	else if (!str && prompt)
-		prompt = ft_strjoin(mini, prompt, mini_getenv(mini, "PWD"));
+	prompt = ft_strjoin(mini, ft_strdup(mini, CYAN), "minishell");
 	prompt = status_prompt(mini, prompt);
 	return (prompt);
 }

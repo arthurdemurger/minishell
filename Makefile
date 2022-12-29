@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: ademurge <ademurge@student.s19.be>         +#+  +:+       +#+         #
+#    By: gponcele <gponcele@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2022/11/15 11:16:48 by gponcele          #+#    #+#              #
-#    Updated: 2022/12/13 21:27:37 by ademurge         ###   ########.fr        #
+#    Updated: 2022/12/26 12:29:09 by ademurge         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -51,7 +51,8 @@ SRC							=	src/builtins/builtin.c \
 								src/ft_split_cmd.c \
 								src/mini_heredoc.c \
 								src/ft_split_string.c \
-								src/prompt_env.c
+								src/prompt_env.c \
+								src/specials.c
 
 LIBFT						=	./libft/libft.a
 
@@ -82,8 +83,9 @@ LIBFT_LINUX					=	libft/ft_calloc.c \
 								libft/ft_itoa.c \
 								libft/ft_tablen.c
 
-INC							=	-I./inc
+INC							=	-I./inc/.
 
+OBJS						=	$(SRC:.c=.o)
 
 # Flags
 
@@ -96,26 +98,30 @@ CC							=	gcc
 
 # Rules
 
-all: 		$(NAME)
+all: 		libft $(NAME)
+
+%o:				%c
+				@$(CC) ${CFLAGS} -I/Users/$(USER)/.brew/opt/readline/include -I./includes -c $< -o ${<:.c=.o}
 
 linux:
 					@$(CC) $(CFLAGS) $(INC) $(SRC) $(LIBFT_LINUX) -lreadline -o $(NAME)
 					@echo "$(GREEN)********** Compiled. $(RESET)"
 
-$(NAME):
-#					@$(CC) $(CFLAGS) $(INC) $(SRC) $(LIBFT) -lreadline -L/Users/ademurge/.brew/opt/readline/lib -I/Users/ademurge/.brew/opt/readline/include -o $(NAME)
-					@$(CC) $(CFLAGS) $(INC) $(SRC) $(LIBFT) -lreadline -L/usr/local/opt/readline/lib -I/usr/local/opt/readline/include -o $(NAME)
+$(NAME): $(OBJS)
+					@$(CC) $(CFLAGS) $(INC) $(OBJS) $(LIBFT)  -lreadline -L/Users/$(USER)/.brew/opt/readline/lib -I/Users/$(USER)/.brew/opt/readline/include -o $(NAME)
 					@echo "$(GREEN)********** Compiled. $(RESET)"
 
 libft:
-					@cd libft && make re && make clean && cd ..
+					@make -C ./libft
 
 clean:
 					@$(RM) $(OBJS)
+					@make clean -C ./libft
 					@echo "$(PURPLE)********* Objects removed. $(RESET)"
 
 fclean: clean
 			@$(RM) $(NAME)
+			@$(RM) $(LIBFT)
 			@echo "$(LIGHTPURPLE)********* Executable removed. $(RESET)"
 
 re: libft fclean all

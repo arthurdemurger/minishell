@@ -6,7 +6,7 @@
 /*   By: ademurge <ademurge@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/11/28 16:13:44 by ademurge          #+#    #+#             */
-/*   Updated: 2022/12/13 18:18:36 by ademurge         ###   ########.fr       */
+/*   Updated: 2022/12/25 15:53:35 by ademurge         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,25 +30,21 @@ void	pipe_and_fork(t_mini *mini, t_cmd *cmd)
 	{
 		g_status = WTERMSIG(g_status);
 		if (g_status != 1)
-			g_status -= 1;
+			g_status = 1;
 	}
 }
 
 int	check_cmd(t_mini *mini, t_cmd *cmd)
 {
-	if (cmd->infile == -1 || cmd->outfile == -1)
+	if (cmd->infile < 0 || cmd->outfile < 0)
 	{
-		if (cmd->outfile == -1)
-			ft_error(mini, DIR_ERR, NO_EXIT);
-		g_status = 1;
+		if (cmd->infile == -1)
+			g_status = 1;
 		return (0);
 	}
-	if (!ch_builtin(cmd) && !par_builtin(cmd)
-		&& !ft_strcmp(cmd->path, "none"))
-	{
-		g_status = 127;
+	if (!cmd->path && ft_strcmp(cmd->cmds[0], "export")
+		&& ft_strcmp(cmd->cmds[0], "unset") && ft_strcmp(cmd->cmds[0], "exit"))
 		return (0);
-	}
 	if (ch_builtin(cmd) && !check_builtin(mini, cmd))
 	{
 		g_status = 1;
@@ -70,4 +66,13 @@ int	n_of_cmd(t_cmd *cmd)
 		tmp = tmp->next;
 	}
 	return (n);
+}
+
+void	mini_new_line(int sig)
+{
+	(void)sig;
+	g_status = 1;
+	ioctl(STDIN_FILENO, TIOCSTI, "\n");
+	rl_replace_line("", 0);
+	rl_on_new_line();
 }

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   minish.h                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ademurge <ademurge@student.s19.be>         +#+  +:+       +#+        */
+/*   By: gponcele <gponcele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/11/15 11:22:21 by gponcele          #+#    #+#             */
-/*   Updated: 2022/12/13 22:03:22 by ademurge         ###   ########.fr       */
+/*   Updated: 2022/12/26 12:02:17 by gponcele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,7 @@
 # include <sys/wait.h>
 # include <stdlib.h>
 # include <unistd.h>
+# include <dirent.h>
 
 /*
 ** Global Variable
@@ -39,10 +40,6 @@ int	g_status;
 /*
 ** Define constants
 */
-
-/* Debug */
-# define ICI printf("ici\n");
-# define LEAKS system("leaks minishell");
 
 /* Colors */
 # define RED "\x1B[31m"
@@ -67,6 +64,7 @@ int	g_status;
 # define PWD_ERR "minishell : error in the pwd."
 # define UNSET_NAME_ERR "minishell: unset: invalid parameter name"
 # define UNSET_ID_ERR "minishell: unset: not a valid identifier"
+# define UNSET_VAR_ERR "minishell: unset: you cannot remove this variable"
 
 /* Characters */
 # define CHILD_PROC 0
@@ -95,6 +93,7 @@ typedef struct s_var
 /* Command structure */
 typedef struct s_cmd
 {
+	char			*input;
 	char			**cmds;
 	char			*path;
 	int				cmds_nb;
@@ -109,13 +108,13 @@ typedef struct s_cmd
 typedef struct s_mini
 {
 	char	*prompt;
-	char	**paths;
 	char	*tempstr;
 	char	*tempstr2;
 	char	*tempstr3;
 	char	*tempstr4;
 	char	*tempstr5;
 	char	**temptab;
+	char	*readline;
 	t_var	*var;
 	t_cmd	*cmd;
 }	t_mini;
@@ -125,12 +124,12 @@ typedef struct s_mini
 */
 
 /* Main */
-char					*get_prompt(t_mini *mini, char *prompt);
+char					*get_prompt(t_mini *mini, char *prompt, char *str);
 void					mini_init(t_mini *mini, char **env);
 int						mini_parser(t_mini *mini, char *str);
 
 /* Utils.c */
-int						is_input(t_mini *mini, char *str);
+int						is_input(char *str);
 char					*fill_parts(t_mini *mini, char **parts,
 							char *str, int i);
 int						ft_quotes(char *str, int i, int quotes,
@@ -140,7 +139,7 @@ void					mini_exit(t_mini *mini);
 char					*mini_getenv(t_mini *mini, char *var);
 int						mini_get_status(t_mini *mini, char *var, int j);
 void					mini_new_line(int sig);
-void					split_string(t_mini *mini, char *s, int i, int index);
+char					**split_string(t_mini *mini, char *s, int i, int index);
 int						ft_pipes(char *str, int i);
 int						ft_pipes2(char *str, int i);
 char					**transform_parts(t_mini *mini, char **parts,
@@ -148,32 +147,35 @@ char					**transform_parts(t_mini *mini, char **parts,
 int						end_of_heredoc(char *input, char *eof);
 char					*get_vars(t_mini *mini, char *str, int i);
 int						eof_to_fd(t_mini *mini, char *str, int fd, char *file);
-char					*get_exec(t_mini *mini, t_cmd *cmd);
+char					*get_exec(t_mini *mini, t_cmd *cmd, char *exec, int i);
+int						only_dots(char *str);
+int						only_slash(char *str);
 
 /* Parsing & Initialization */
 char					**clean_files(t_mini *mini, char **cmds,
 							int i, int j);
 t_cmd					*cmd_init(t_mini *mini, char *str);
-void					delete_double_quotes(t_mini *mini, char *str, int i);
-void					delete_quotes(t_mini *mini, char *str, int i, int j);
+char					*delete_double_quotes(t_mini *mini, char *str, int i);
+char					*delete_quotes(t_mini *mini, char *str, int i, int j);
 int						dollar(char *str, int i, char c);
 char					**ft_split_cmd(t_mini *mini, char *s, int i,
 							int index);
 char					*ft_var(t_mini *mini, char *str, char *result);
 t_cmd					*get_cmd(t_mini *mini,
 							t_cmd *cmd, char *str, int i);
-char					*get_exec(t_mini *mini, t_cmd *cmd);
 void					get_infile(t_mini *mini, t_cmd *cmd, int i);
 void					get_outfile(t_mini *mini, t_cmd *cmd, int i, int j);
-void					get_path(t_mini *mini, t_cmd *cmd, int i);
+void					get_path(t_mini *mini, t_cmd *cmd, char *path, int i);
 char					*get_vars(t_mini *mini, char *str, int i);
 int						is_var(t_mini *mini, char *var);
 void					mini_env(t_mini *mini);
 int						mini_heredoc(t_mini *mini, t_cmd *cmd, int fd, int i);
 char					*to_empty(char *str);
 int						quotes(char *str, char c, int i);
-void					get_input(t_mini *mini, char *str, char c);
+char					*get_input(t_mini *mini, char *str, char c);
+int						ft_spikes(t_mini *mini, t_cmd *cmd);
 void					put_shell(void);
+char					*get_eof(t_cmd *cmd, int i);
 
 /* Execution */
 void					execute(t_mini *mini);
@@ -204,12 +206,15 @@ char					*ft_rev_strchr(t_mini *mini, char *str, char c);
 int						is_env(t_mini *mini, char *s);
 void					modif_var(t_mini *mini, char *name_var, char *s);
 
+/* Specials */
+void					outfiles(t_mini *mini, char **cmds, int i, int j);
+
 /* Error */
 void					ft_error(t_mini *mini, char *type, int is_exit);
 int						unclosed_quotes(void);
 int						get_infos_error(t_mini *mini,
 							t_cmd *cmd, int i, char *s);
-int						spike_error(t_mini *mini, char *str);
+int						spike_error(t_mini *mini);
 int						dir(t_mini *mini, char *str, int i, char c);
 
 /* Free */
@@ -247,7 +252,7 @@ void					ft_putendl_fd(char *s, int fd);
 void					ft_putstr_fd(char *s, int fd);
 void					ft_put_tab(char **tab);
 char					**ft_split(t_mini *mini, char const *s, char c);
-void					ft_split_paths(t_mini *mini, char const *s, char c);
+char					**ft_split_paths(t_mini *mini, char const *s, char c);
 char					*ft_strchr(const char *s, int c);
 char					*ft_strchr_minishell(const char *s, int c, char k);
 int						ft_strcmp(char *s1, char *s2);

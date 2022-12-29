@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   free.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ademurge <ademurge@student.s19.be>         +#+  +:+       +#+        */
+/*   By: gponcele <gponcele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/07/06 14:53:43 by gponcele          #+#    #+#             */
-/*   Updated: 2022/12/13 18:35:03 by ademurge         ###   ########.fr       */
+/*   Updated: 2022/12/22 17:49:02 by gponcele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,6 @@ void	ft_free_all(t_mini *mini)
 		free(mini->prompt);
 	if (mini->var)
 		ft_lstclear(mini->var);
-	mini->paths = ft_free_tab(mini->paths, ft_tablen(mini->paths));
 	if (mini->cmd && mini->cmd->cmds)
 		mini->cmd = ft_free_cmd(mini->cmd);
 	if (mini->temptab)
@@ -38,10 +37,12 @@ void	ft_free_all(t_mini *mini)
 
 t_cmd	*ft_free_cmd(t_cmd *cmd)
 {
+	if (cmd->input)
+		ft_free(cmd->input);
 	if (cmd->cmds)
 		cmd->cmds = ft_free_tab(cmd->cmds, ft_tablen(cmd->cmds));
 	if (cmd->path)
-		free (cmd->path);
+		ft_free(cmd->path);
 	if (cmd->next)
 		ft_free_cmd(cmd->next);
 	free (cmd);

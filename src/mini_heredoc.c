@@ -6,7 +6,7 @@
 /*   By: gponcele <gponcele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/11/29 15:09:46 by gponcele          #+#    #+#             */
-/*   Updated: 2022/12/13 17:28:09 by gponcele         ###   ########.fr       */
+/*   Updated: 2022/12/22 17:27:23 by gponcele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,78 +58,80 @@ int	fill_fd(t_mini *mini, char *input, int fd, char *str)
 	}
 }
 
-void	add_heredoc(t_mini *mini, int i)
+char	*add_heredoc(t_mini *mini, int i)
 {
 	int		fd;
 	char	*nb;
+	char	*file;
 
+	g_status = 0;
 	nb = ft_itoa(mini, i);
-	mini->tempstr = ft_strjoin(mini, ft_strdup(mini, "/tmp/heredoc_"), nb);
+	file = ft_strjoin(mini, ft_strdup(mini, "/tmp/heredoc_"), nb);
 	free (nb);
-	while (!access(mini->tempstr, F_OK))
+	while (!access(file, F_OK))
 	{
 		i++;
-		mini->tempstr = ft_free(mini->tempstr);
+		file = ft_free(file);
 		nb = ft_itoa(mini, i);
-		mini->tempstr = ft_strjoin(mini, ft_strdup(mini, "/tmp/heredoc_"), nb);
+		file = ft_strjoin(mini, ft_strdup(mini, "/tmp/heredoc_"), nb);
 		free (nb);
 	}
-	fd = open(mini->tempstr, O_CREAT | O_RDWR, 0777);
+	fd = open(file, O_CREAT | O_RDWR, 0777);
 	close (fd);
+	return (file);
 }
 
-int	add_fd(t_mini *mini, char *str, int fd)
+int	add_fd(t_mini *mini, char *str, char *eof, int fd)
 {
-	if (!ft_quotes(str, -1, 0, 0))
+	char	*file;
+
+	if (!ft_quotes(eof, -1, 0, 0))
 		return (unclosed_quotes());
-	else if (str[0] == '<' && str[1] && str[1] == '<')
-		return (spike_error(mini, &str[2]));
-	else if (str[0] == '<' && !str[1])
-		return (get_infos_error(mini, NULL, 1, NULL));
-	add_heredoc(mini, 1);
-	fd = open(mini->tempstr, O_WRONLY);
-	if (str[0] == '<' && str[1] && str[1] != '<')
-		return (eof_to_fd(mini, &str[1], fd, mini->tempstr));
+	file = add_heredoc(mini, 1);
+	fd = open(file, O_WRONLY);
+	if (str[2] == '<')
+		return (eof_to_fd(mini, eof, fd, file));
 	while (1)
 	{
 		signal(SIGINT, mini_new_line);
 		signal(SIGQUIT, SIG_IGN);
 		signal(SIGTSTP, SIG_IGN);
-		if (g_status == 1 || !fill_fd(mini, readline("> "), fd, str))
+		if (g_status == 1 || !fill_fd(mini, readline("> "), fd, eof))
 			break ;
 	}
 	close (fd);
 	if (g_status == 1)
+	{
+		free (file);
 		return (-1);
-	fd = open(mini->tempstr, O_RDONLY);
-	mini->tempstr = ft_free(mini->tempstr);
+	}
+	fd = open(file, O_RDONLY);
+	free (file);
 	return (fd);
 }
 
 int	mini_heredoc(t_mini *mini, t_cmd *cmd, int fd, int i)
 {
 	char	*eof;
+	int		fd_c;
 
-	while (cmd->cmds[i] && fd != -1)
+	fd_c = fd;
+	while (cmd->cmds[++i] && fd != -1)
 	{
 		if (cmd->cmds[i][0] == '<')
 		{
 			fd = STDIN_FILENO;
 			if (cmd->cmds[i][1] == '<')
 			{
-				if (cmd->cmds[i][2])
-					eof = &cmd->cmds[i][2];
-				else if (!cmd->cmds[i][2] && cmd->cmds[i + 1]
-						&& cmd->cmds[i + 1][0] != '<'
-						&& cmd->cmds[i + 1][0] != '>')
-					eof = cmd->cmds[i + 1];
-				else
+				eof = get_eof(cmd, i);
+				if (!eof)
 					return (get_infos_error(mini, cmd, 1, NULL));
-				g_status = 0;
-				fd = add_fd(mini, eof, 0);
+				else if (eof[1] != '<')
+					fd = add_fd(mini, cmd->cmds[i], eof, 0);
 			}
 		}
-		i++;
 	}
+	if (fd_c != STDIN_FILENO)
+		return (fd_c);
 	return (fd);
 }

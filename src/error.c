@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   error.c                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: gponcele <gponcele@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ademurge <ademurge@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/11/22 12:52:19 by ademurge          #+#    #+#             */
-/*   Updated: 2022/12/13 17:23:49 by gponcele         ###   ########.fr       */
+/*   Updated: 2022/12/25 14:17:33 by ademurge         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,8 @@ void	ft_error(t_mini *mini, char *type, int is_exit)
 	write (STDERR_FILENO, "\n", 1);
 	if (is_exit == EXIT)
 	{
-		ft_free_all(mini);
+		if (mini)
+			ft_free_all(mini);
 		write(STDERR_FILENO, "\nexit\n", 6);
 		exit(g_status);
 	}
@@ -26,6 +27,7 @@ void	ft_error(t_mini *mini, char *type, int is_exit)
 
 int	get_infos_error(t_mini *mini, t_cmd *cmd, int i, char *s)
 {
+	(void)cmd;
 	if (i == 1)
 	{
 		ft_error(mini, "syntax error near unexpected token", NO_EXIT);
@@ -33,7 +35,8 @@ int	get_infos_error(t_mini *mini, t_cmd *cmd, int i, char *s)
 	}
 	else if (i == 2)
 	{
-		mini->tempstr = ft_strjoin(mini, ft_strdup(mini, "3: cannot open "), s);
+		mini->tempstr = ft_strjoin(mini,
+				ft_strdup(mini, "minishell: cannot open "), s);
 		mini->tempstr = ft_strjoin(mini, mini->tempstr,
 				": No such file or directory");
 		ft_error(mini, mini->tempstr, NO_EXIT);
@@ -47,7 +50,6 @@ int	get_infos_error(t_mini *mini, t_cmd *cmd, int i, char *s)
 		ft_error(mini, mini->tempstr, NO_EXIT);
 		mini->tempstr = ft_free(mini->tempstr);
 		g_status = 127;
-		cmd->path = ft_strdup(mini, "none");
 	}
 	return (-1);
 }
@@ -59,21 +61,10 @@ int	unclosed_quotes(void)
 	return (-1);
 }
 
-int	spike_error(t_mini *mini, char *str)
+int	spike_error(t_mini *mini)
 {
-	int		i;
-
-	i = 0;
-	mini->tempstr3 = ft_strdup(mini, "<");
-	while (str[i] && i < 2 && str[i] == '<')
-		mini->tempstr3 = ft_strjoin2(mini, mini->tempstr3, str[i++]);
-	mini->tempstr4 = ft_strjoin(mini,
-			ft_strdup(mini, "syntax error near unexpected token '"),
-			mini->tempstr3);
-	mini->tempstr4 = ft_strjoin2(mini, mini->tempstr4, S_QUOTE);
-	ft_error(mini, mini->tempstr4, 0);
-	mini->tempstr3 = ft_free(mini->tempstr3);
-	mini->tempstr4 = ft_free(mini->tempstr4);
+	ft_error(mini, "syntax error near unexpected token", 0);
+	g_status = 258;
 	return (-1);
 }
 
@@ -92,7 +83,7 @@ int	dir(t_mini *mini, char *str, int i, char c)
 		else
 			mini->tempstr = ft_strjoin2(mini, mini->tempstr, str[i++]);
 	}
-	if (access(mini->tempstr, X_OK))
+	if (access(mini->tempstr, F_OK))
 	{
 		write (2, mini->tempstr, ft_strlen(mini->tempstr));
 		ft_putendl_fd(": No such file or directory", 2);
